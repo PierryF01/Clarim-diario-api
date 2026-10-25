@@ -23,4 +23,4 @@ USER spring
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms64m", "-Xmx300m", "-XX:MaxMetaspaceSize=96m", "-XX:MaxDirectMemorySize=32m", "-jar", "app.jar"]
