@@ -8,5 +8,7 @@ import java.util.List;
 
 public interface NoticiaRepository extends JpaRepository<Noticia, Long> {
 
-    List<Noticia> findTop20ByOrderByPublicadaEmDesc();
+    List<Noticia> findTop22ByTituloNotContainingIgnoreCaseAndPublicadaEmIsNotNullOrderByPublicadaEmDesc(
+            String termo
+    );
 }

@@ -36,8 +36,12 @@ public class NoticiaService {
         this.assinaturaRepository = assinaturaRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<NoticiaResumo> listarTodas() {
-        return noticiaRepository.findTop20ByOrderByPublicadaEmDesc()
+        return noticiaRepository
+                .findTop22ByTituloNotContainingIgnoreCaseAndPublicadaEmIsNotNullOrderByPublicadaEmDesc(
+                        "noticia de teste"
+                )
                 .stream()
                 .map(this::paraDto)
                 .toList();
@@ -126,14 +130,14 @@ public class NoticiaService {
 
         return new NoticiaResponse(
                 salva.getId(),
-                noticia.getTitulo(),
-                noticia.getSlug(),
-                noticia.getResumo(),
-                noticia.getTexto(),
-                noticia.getCategoria().getNome(),
-                noticia.getUsuario().getNome(),
-                noticia.getPremium(),
-                noticia.getPublicadaEm()
+                salva.getTitulo(),
+                salva.getSlug(),
+                salva.getResumo(),
+                salva.getTexto(),
+                salva.getCategoria().getNome(),
+                salva.getUsuario().getNome(),
+                salva.getPremium(),
+                salva.getPublicadaEm()
         );
     }
 }
