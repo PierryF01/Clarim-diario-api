@@ -32,11 +32,13 @@ public class NoticiaService {
         this.assinaturaRepository = assinaturaRepository;
     }
 
-    public List<NoticiaResumo> listarTodas() {
-        return noticiaRepository.findAll()
-                .stream()
-                .map(this::paraDto)
-                .toList();
+    
+public List<NoticiaResumo> listarTodas() {
+    return noticiaRepository.findTop20ByOrderByPublicadaEmDesc()
+            .stream()
+            .map(this::paraDto)
+            .toList();
+}
     }
 
     private NoticiaResumo paraDto(Noticia noticia) {
