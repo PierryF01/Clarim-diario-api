@@ -1,3 +1,4 @@
+
 package com.clarim.api.config;
 
 import com.clarim.api.security.JwtAuthenticationFilter;
@@ -28,51 +29,77 @@ public class ConfiguracaoSeguranca {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration
+    ) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationFilter jwtAuthenticationFilter
+    ) throws Exception {
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(configuracaoCors()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(regras -> regras
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/usuarios").permitAll()
-                        // O ENDPOINT DO WEBHOOK TEM QUE SER PÚBLICO: quem chama
-                        // é o servidor do Stripe, que não tem (e não deveria
-                        // ter) um JWT nosso. A segurança aqui não vem do
-                        // Spring Security — vem da verificação de assinatura
-                        // HMAC dentro do WebhookController (Webhook.constructEvent).
+
+                        // Webhook do Stripe: a assinatura é validada no controller.
                         .requestMatchers("/api/webhook/**").permitAll()
-                        // Ver planos (preço, nome) não exige login — só
-                        // CRIAR a sessão de checkout (POST /api/assinaturas/checkout,
-                        // que NÃO está nesta lista, logo cai em anyRequest().authenticated()).
+
+                        // Consultar planos é público.
                         .requestMatchers(HttpMethod.GET, "/api/planos").permitAll()
-                        // Ler uma notícia é público mesmo quando ela é premium —
-                        // é o NoticiaService quem decide, nota a nota, se o
-                        // campo `texto` vem preenchido ou null. Por isso aqui
-                        // não tem como (e não deveria) bloquear a rota inteira.
+
+                        // Consultar notícias é público.
                         .requestMatchers(HttpMethod.GET, "/api/noticias/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/noticias").hasAnyRole("EDITOR", "ADMIN")
+
+                        // Criar notícias exige perfil de editor ou administrador.
+                        .requestMatchers(HttpMethod.POST, "/api/noticias")
+                        .hasAnyRole("EDITOR", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
         return http.build();
     }
 
     private CorsConfigurationSource configuracaoCors() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:3333",
+                "https://clarim-diario-chi.vercel.app"
+        ));
+
+        config.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS"
+        ));
+
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
-
 }
