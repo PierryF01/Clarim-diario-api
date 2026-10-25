@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # 1. Banco de Dados Oficial dentro do Docker
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres_container
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: clarim_diario
+    ports:
+      - "5433:5432"  # Porta 5433 para não dar conflito se o seu pgAdmin local estiver aberto
+    networks:
+      - clarim-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Seu Backend Java conectado no banco do Docker
+  backend-app:
+    build:
+      context: ./api
+      dockerfile: ../Dockerfile
+    container_name: backend_container
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/clarim_diario
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_FLYWAY_URL=jdbc:postgresql://postgres-db:5432/clarim_diario
+      - SPRING_FLYWAY_USER=postgres
+      - SPRING_FLYWAY_PASSWORD=root
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - clarim-network
+    depends_on:
+      - postgres-db
+
+networks:
+  clarim-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
